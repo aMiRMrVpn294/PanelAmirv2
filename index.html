@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fa">
+<head>
+  <meta charset="UTF-8">
+  <title>پنل V2Ray | MrVPN</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/vazir-font@latest/dist/font-face.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Vazir', sans-serif;
+      background: linear-gradient(135deg, #1f1c2c, #928dab);
+      color: #fff;
+      text-align: center;
+      padding: 30px;
+      margin: 0;
+    }
+    h1 { font-size: 2em; margin-bottom: 10px; }
+    p { font-size: 1.1em; margin-bottom: 20px; }
+    input, button {
+      padding: 12px;
+      margin: 10px;
+      border-radius: 8px;
+      border: none;
+      width: 80%;
+      max-width: 300px;
+      font-size: 1em;
+      transition: 0.3s;
+    }
+    input {
+      background: #ffffff22;
+      color: #fff;
+    }
+    button {
+      background: #ff6f61;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #ff3b2e;
+    }
+    .config-box {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+    .hidden { display: none; }
+    #configs p {
+      word-break: break-word;
+      font-size: 0.9em;
+      margin: 10px 0;
+    }
+    #langToggle {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: #444;
+      color: #fff;
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 0.9em;
+      cursor: pointer;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+  <button id="langToggle" onclick="toggleLang()">English</button>
+
+  <h1 id="title">🎉 پنل V2Ray | MrVPN</h1>
+  <p id="subtitle">برای استفاده، ابتدا نام کاربری وارد کنید</p>
+
+  <div id="auth">
+    <input type="text" id="username" placeholder="نام کاربری"><br>
+    <button id="loginBtn" onclick="login()">ورود</button>
+  </div>
+
+  <div id="panel" class="hidden">
+    <h2 id="configTitle">✅ کانفیگ‌های فعال</h2>
+    <div id="configs"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script>
+    let lang = "fa";
+
+    const texts = {
+      fa: {
+        title: "🎉 پنل V2Ray | MrVPN",
+        subtitle: "برای استفاده، ابتدا نام کاربری وارد کنید",
+        loginBtn: "ورود",
+        configTitle: "✅ کانفیگ‌های فعال",
+        copy: "📋 کپی",
+        share: "🔗 اشتراک‌گذاری",
+        copied: "کپی شد!",
+        shareError: "اشتراک‌گذاری توسط مرورگر پشتیبانی نمی‌شود",
+        fetchError: "خطا در دریافت اطلاعات",
+        langBtn: "English"
+      },
+      en: {
+        title: "🎉 V2Ray Panel | MrVPN",
+        subtitle: "Enter your username to continue",
+        loginBtn: "Login",
+        configTitle: "✅ Active Configs",
+        copy: "📋 Copy",
+        share: "🔗 Share",
+        copied: "Copied!",
+        shareError: "Sharing not supported by browser",
+        fetchError: "Error loading configs",
+        langBtn: "فارسی"
+      }
+    };
+
+    function toggleLang() {
+      lang = lang === "fa" ? "en" : "fa";
+      document.getElementById("title").innerText = texts[lang].title;
+      document.getElementById("subtitle").innerText = texts[lang].subtitle;
+      document.getElementById("loginBtn").innerText = texts[lang].loginBtn;
+      document.getElementById("configTitle").innerText = texts[lang].configTitle;
+      document.getElementById("langToggle").innerText = texts[lang].langBtn;
+    }
+
+    function createElement(tag) {
+      return document.createElement(tag);
+    }
+
+    function login() {
+      const username = document.getElementById("username").value;
+      if (!username) return alert(lang === "fa" ? "نام کاربری را وارد کنید" : "Please enter username");
+      document.getElementById("auth").classList.add("hidden");
+      document.getElementById("panel").classList.remove("hidden");
+      loadConfigs();
+    }
+
+    function loadConfigs() {
+      fetch("sub.txt")
+        .then(res => res.text())
+        .then(text => {
+          const lines = text.split("\n").filter(x => x.trim());
+          const container = document.getElementById("configs");
+          lines.forEach((config, index) => {
+            const box = createElement("div");
+            box.className = "config-box";
+
+            const qr = createElement("div");
+            qr.id = "qr" + index;
+            new QRCode(qr, { text: config, width: 128, height: 128 });
+
+            const textEl = createElement("p");
+            textEl.innerText = config;
+
+            const copyBtn = createElement("button");
+            copyBtn.innerText = texts[lang].copy;
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(config);
+              alert(texts[lang].copied);
+            };
+
+            const shareBtn = createElement("button");
+            shareBtn.innerText = texts[lang].share;
+            shareBtn.onclick = () => {
+              if (navigator.share) {
+                navigator.share({ title: "MrVPN", text: config });
+              } else {
+                alert(texts[lang].shareError);
+              }
+            };
+
+            [qr, textEl, copyBtn, shareBtn].forEach(el => box.appendChild(el));
+            container.appendChild(box);
+          });
+        })
+        .catch(err => {
+          console.error("خطا در دریافت کانفیگ‌ها:", err);
+          document.getElementById("configs").innerText = texts[lang].fetchError;
+        });
+    }
+  </script>
+</body>
+</html>
